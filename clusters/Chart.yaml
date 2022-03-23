@@ -1,0 +1,10 @@
+apiVersion: v2
+name: rhacm-hivecluster
+description: A Helm chart for deploying OpenShift clusters via Hive/RHACM
+type: application
+version: 0.2.5
+appVersion: "1.0"
+dependencies:
+  - name: hivecluster
+    version: 0.2.5
+    repository: https://cloud-native-toolkit.github.io/toolkit-charts/

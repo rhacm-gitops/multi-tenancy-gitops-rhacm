@@ -1,0 +1,97 @@
+# apiVersion: v1                    
+# kind: Namespace
+# metadata:
+#   name: openshift-gitops                             
+---
+# apiVersion: v1                      
+# kind: Namespace
+# metadata:
+#   name: multi-tenancy-gitops-channel-ns
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: Channel
+metadata:
+  annotations:
+    apps.open-cluster-management.io/reconcile-rate: medium
+  name: multi-tenancy-gitops-channel
+  namespace: multi-tenancy-gitops-channel-ns
+spec:
+  type: Git
+  pathname: 'https://github.com/rhacm-gitops/multi-tenancy-gitops.git'
+---
+apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: install-openshift-gitops
+  namespace: openshift-gitops
+spec:
+  componentKinds:
+  - group: apps.open-cluster-management.io
+    kind: Subscription
+  descriptor: {}
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: 
+          - install-openshift-gitops
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: Subscription
+metadata:
+  annotations:
+    apps.open-cluster-management.io/git-branch: master
+    apps.open-cluster-management.io/git-path: setup/ocp4x
+    apps.open-cluster-management.io/reconcile-option: merge
+  labels:
+    app: install-openshift-gitops
+  name: install-openshift-gitops-subscription-1
+  namespace: openshift-operators
+spec:
+  channel: multi-tenancy-gitops-channel-ns/multi-tenancy-gitops-channel
+  placement:
+    placementRef:
+      kind: PlacementRule
+      name: install-openshift-gitops-placement-1
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  labels:
+    app: install-openshift-gitops
+  name: install-openshift-gitops-placement-1
+  namespace: openshift-operators
+spec:
+  clusterConditions:
+    - type: ManagedClusterConditionAvailable
+      status: "True"
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: Subscription
+metadata:
+  annotations:
+    apps.open-cluster-management.io/git-branch: master
+    apps.open-cluster-management.io/git-path: setup/ocp4x/argocd-instance
+    apps.open-cluster-management.io/reconcile-option: merge
+  labels:
+    app: install-openshift-gitops
+  name: install-openshift-gitops-subscription-2
+  namespace: openshift-gitops
+spec:
+  channel: multi-tenancy-gitops-channel-ns/multi-tenancy-gitops-channel
+  placement:
+    placementRef:
+      kind: PlacementRule
+      name: install-openshift-gitops-placement-2
+---
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  labels:
+    app: install-openshift-gitops
+  name: install-openshift-gitops-placement-2
+  namespace: openshift-gitops
+spec:
+  clusterConditions:
+    - type: ManagedClusterConditionAvailable
+      status: "True"
