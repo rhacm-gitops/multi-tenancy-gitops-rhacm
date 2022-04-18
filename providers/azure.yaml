@@ -23,7 +23,7 @@ spec:
   - secretKey: openshiftSSHPublicKey
     remoteRef:
       key: a82957c4-8c6f-d39c-8ae6-0dda4b30c0ea
-  refreshInterval: 24h
+  refreshInterval: 24h0m0s
   secretStoreRef:
     name: cluster
     kind: ClusterSecretStore
