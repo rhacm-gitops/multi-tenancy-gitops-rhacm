@@ -33,13 +33,13 @@ spec:
                 apiVersion: v1
                 metadata:
                   name: openshift-gitops
-            - complianceType: mustnothave
-              objectDefinition:
-                apiVersion: pipelines.openshift.io/v1alpha1
-                kind: GitopsService
-                metadata:
-                  name: cluster
-                  namespace: openshift-gitops
+            # - complianceType: mustnothave
+            #   objectDefinition:
+            #     apiVersion: pipelines.openshift.io/v1alpha1
+            #     kind: GitopsService
+            #     metadata:
+            #       name: cluster
+            #       namespace: openshift-gitops
 ---
 apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
