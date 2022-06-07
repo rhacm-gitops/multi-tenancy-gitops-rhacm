@@ -1,0 +1,36 @@
+{{- if and (eq .Values.cloud.provider "Azure") (eq .Values.cluster.submariner "enabled") -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: azure-submariner-postsync-job-
+  namespace: {{ include "cluster.namespace" . }}
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  template:
+    spec:
+      containers:
+        - name: firewallconfig
+          image: mcr.microsoft.com/azure-cli:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo $AZURE_SERVICE_PRINCIPAL_JSON
+          resources:
+            requests:
+              cpu: "2500m"
+              memory: "64Mi"
+            limits:
+              cpu: "2500m"
+              memory: "256Mi"
+          env:
+          - name: AZURE_SERVICE_PRINCIPAL_JSON
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "cluster.name" . }}-azure-creds
+                key: osServicePrincipal.json
+      restartPolicy: Never
+  backoffLimit: 4
+{{- end -}}
