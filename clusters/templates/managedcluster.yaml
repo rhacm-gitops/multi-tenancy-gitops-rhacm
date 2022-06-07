@@ -6,6 +6,9 @@ metadata:
     region: '{{ include "cloud.region" . }}'
     name: '{{ include "cluster.name" . }}'
     vendor: '{{ include "cluster.vendor" . }}'
+    {{- if .Values.cluster.clusterSet }}
+    cluster.open-cluster-management.io/clusterset: {{ .Values.cluster.clusterSet }} 
+    {{- end}}    
   name: '{{ include "cluster.name" . }}'
   annotations:
     argocd.argoproj.io/sync-wave: "130"
