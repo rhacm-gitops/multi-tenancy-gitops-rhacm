@@ -15,5 +15,5 @@ spec:
     {{- include "machinepool.platform" . | nindent 4}}
   replicas: 1
   labels:
-    submariner.io/gateway: true
+    submariner.io/gateway: "true"
 {{- end -}}
