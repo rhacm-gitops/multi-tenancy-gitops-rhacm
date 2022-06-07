@@ -24,6 +24,24 @@ spec:
               echo "Logging on to Azure Subscription $SUBSCRIPTION"
               az login --service-principal -u $USERNAME -p $PASSWORD --tenant $TENANT
 
+          resources:
+            requests:
+              cpu: "2500m"
+              memory: "64Mi"
+            limits:
+              cpu: "2500m"
+              memory: "256Mi"
+          env:
+          - name: AZURE_SERVICE_PRINCIPAL_JSON
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "cluster.name" . }}-azure-creds
+                key: osServicePrincipal.json
+      restartPolicy: Never
+  backoffLimit: 4
+{{- end -}}
+
+{{- if eq 1 2 -}}
               # RG_NAME={{ include "cloud.azure.resourceGroupName" . }}
               # LB_NAME=$(az network lb list -g $RG_NAME --query "[?!contains(name, 'internal')]"|jq -r .[].name)
               # FRONTEND_IP_NAME=submariner-frontend-ip
@@ -49,19 +67,4 @@ spec:
               #     --inbound-nat-rule submariner-natt-4500 \
               #     --nic-name $nic --ip-config-name pipConfig
               # done
-          resources:
-            requests:
-              cpu: "2500m"
-              memory: "64Mi"
-            limits:
-              cpu: "2500m"
-              memory: "256Mi"
-          env:
-          - name: AZURE_SERVICE_PRINCIPAL_JSON
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "cluster.name" . }}-azure-creds
-                key: osServicePrincipal.json
-      restartPolicy: Never
-  backoffLimit: 4
 {{- end -}}
