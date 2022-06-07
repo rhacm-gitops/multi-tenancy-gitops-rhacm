@@ -1,0 +1,9 @@
+{{- if eq .Values.cluster.submariner "enabled" -}}
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ManagedClusterAddOn
+metadata:
+    name: submariner
+    namespace: {{ include "cluster.namespace" . }}
+spec:
+    installNamespace: submariner-operator
+{{- end -}}
