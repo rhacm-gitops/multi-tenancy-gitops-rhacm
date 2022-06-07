@@ -1,0 +1,19 @@
+{{- if and (eq .Values.cloud.provider "Azure") (eq .Values.cluster.submariner "enabled") -}}
+apiVersion: hive.openshift.io/v1
+kind: MachinePool
+metadata:
+  name: {{ include "cluster.name" . }}-submariner
+  namespace: {{ include "cluster.namespace" .}}
+  annotations:
+    argocd.argoproj.io/sync-wave: "120"
+    helm.sh/hook-weight: "120"
+spec:
+  clusterDeploymentRef:
+    name: "{{ include "cluster.name" . }}"
+  name: submariner
+  platform:
+    {{- include "machinepool.platform" . | nindent 4}}
+  replicas: 1
+  labels:
+    submariner.io/gateway: true
+{{- end -}}

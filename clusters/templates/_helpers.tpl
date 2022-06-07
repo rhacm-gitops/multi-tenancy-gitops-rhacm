@@ -65,6 +65,15 @@ platform:
   {{- end -}}
 {{- end -}}
 
+{{- define "cloud.azure.resourceGroupName" -}}
+  {{- if .Values.cloud.azure.resourceGroupName -}}
+    {{- .Values.cloud.azure.resourceGroupName -}}
+  {{- else -}}
+    "{{ .Values.cluster.name }}-rg"
+  {{- end -}}
+{{- end -}}
+
+
 {{- define "imageset.name" -}}
   img{{ .Values.cluster.version }}-x86-64-appsub
 {{- end -}}

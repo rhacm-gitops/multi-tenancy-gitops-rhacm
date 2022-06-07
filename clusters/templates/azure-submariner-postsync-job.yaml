@@ -17,7 +17,38 @@ spec:
             - /bin/sh
             - -c
             - |
-              echo $AZURE_SERVICE_PRINCIPAL_JSON
+              USERNAME=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq .clientId)
+              PASSWORD=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq .clientSecret)
+              TENANT=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq .tenantId)
+              SUBSCRIPTION=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq .subscriptionId)
+              echo "Logging on to Azure Subscription $SUBSCRIPTION"
+              az login --service-principal -u $USERNAME -p $PASSWORD --tenant $TENANT
+
+              # RG_NAME={{ include "cloud.azure.resourceGroupName" . }}
+              # LB_NAME=$(az network lb list -g $RG_NAME --query "[?!contains(name, 'internal')]"|jq -r .[].name)
+              # FRONTEND_IP_NAME=submariner-frontend-ip
+
+              # echo "Creating submariner frontend ip"
+              # az network public-ip create -g $RG_NAME -n $FRONTEND_IP_NAME --sku Standard
+              # echo "Adding submariner frontend ip to $LB_NAME loadbalancer"
+              # az network lb frontend-ip create -g $RG_NAME -n $FRONTEND_IP_NAME --lb-name $LB_NAME --public-ip-address $FRONTEND_IP_NAME
+
+              # echo "Adding NAT Traversal rule port 4500"
+              # az network lb inbound-nat-rule create --lb-name $LB_NAME \
+              #   --resource-group $RG_NAME \
+              #   --name submariner-natt-4500 \
+              #   --protocol Udp --frontend-port 4500 \
+              #   --backend-port 4500 \
+              #   --frontend-ip-name $FRONTEND_IP_NAME
+              
+              # WORKER_NICS=$(az network nic list -g $RG_NAME --query "[?contains(name,'submariner')]"|jq .[].name)
+              # for nic in $WORKER_NICS; do
+              #   echo "Adding nic $nic to submariner-natt-4500 inbound nat rule"
+              #   az network nic ip-config inbound-nat-rule add \
+              #     --lb-name $LB_NAME --resource-group $RG_NAME \
+              #     --inbound-nat-rule submariner-natt-4500 \
+              #     --nic-name $nic --ip-config-name pipConfig
+              # done
           resources:
             requests:
               cpu: "2500m"
