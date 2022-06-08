@@ -39,7 +39,6 @@ spec:
                 name: {{ include "cluster.name" . }}-azure-creds
                 key: osServicePrincipal.json
       restartPolicy: Never
-  backoffLimit: 4
 {{- end -}}
               RG_NAME={{ include "cloud.azure.resourceGroupName" . }}
               LB_NAME=$(az network lb list -g $RG_NAME --query "[?!contains(name, 'internal')]"|jq -r .[].name)
