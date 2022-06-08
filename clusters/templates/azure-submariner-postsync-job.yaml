@@ -29,7 +29,7 @@ spec:
               RG_NAME=$(az group list --query "[?contains(name,'azure-hive-c1')]"|jq -r .[].name)
               LB_NAME=$(az network lb list -g $RG_NAME --query "[?!contains(name, 'internal')]"|jq -r .[].name)
               FRONTEND_IP_NAME=submariner-frontend-ip
-              WORKER_NICS=$(az network nic list -g $RG_NAME --query "[?contains(name,'submariner')]"|jq .[].name)
+              WORKER_NICS=$(az network nic list -g $RG_NAME --query "[?contains(name,'submariner')]"|jq -r .[].name)
 
               echo "Creating submariner frontend ip"
               az network public-ip create -g $RG_NAME -n $FRONTEND_IP_NAME --sku Standard
