@@ -17,6 +17,7 @@ spec:
             - /bin/sh
             - -c
             - |
+              export HOME=/tmp
               USERNAME=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq -r .clientId)
               PASSWORD=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq -r .clientSecret)
               TENANT=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq -r .tenantId)
