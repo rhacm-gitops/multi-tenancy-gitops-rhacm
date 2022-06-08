@@ -101,7 +101,7 @@ spec:
               az network nsg rule create --resource-group $RG_NAME \
                 --nsg-name $LB_NAME-nsg --priority 202 \
                 --name submariner-8080-outbound --direction Outbound --access Allow \
-                --protocol Tco --destination-port-ranges 8080
+                --protocol Tcp --destination-port-ranges 8080
 
           resources:
             requests:
