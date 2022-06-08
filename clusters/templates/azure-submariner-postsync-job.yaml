@@ -40,6 +40,7 @@ spec:
                 key: osServicePrincipal.json
       restartPolicy: Never
 {{- end -}}
+{{- if eq 1 2 -}}
               RG_NAME={{ include "cloud.azure.resourceGroupName" . }}
               LB_NAME=$(az network lb list -g $RG_NAME --query "[?!contains(name, 'internal')]"|jq -r .[].name)
               FRONTEND_IP_NAME=submariner-frontend-ip
@@ -65,7 +66,4 @@ spec:
                   --inbound-nat-rule submariner-natt-4500 \
                   --nic-name $nic --ip-config-name pipConfig
               done
-{{- if eq 1 2 -}}
-
-
 {{- end -}}
