@@ -10,8 +10,6 @@ metadata:
 spec:
   template:
     spec:
-      securityContext:
-        runAsUser: 0
       containers:
         - name: firewallconfig
           image: mcr.microsoft.com/azure-cli:latest
@@ -19,10 +17,10 @@ spec:
             - /bin/sh
             - -c
             - |
-              USERNAME=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq .clientId)
-              PASSWORD=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq .clientSecret)
-              TENANT=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq .tenantId)
-              SUBSCRIPTION=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq .subscriptionId)
+              USERNAME=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq -r .clientId)
+              PASSWORD=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq -r .clientSecret)
+              TENANT=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq -r .tenantId)
+              SUBSCRIPTION=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq -r .subscriptionId)
               echo "Logging on to Azure Subscription $SUBSCRIPTION"
               az login --service-principal -u $USERNAME -p $PASSWORD --tenant $TENANT
           resources:
@@ -39,6 +37,7 @@ spec:
                 name: {{ include "cluster.name" . }}-azure-creds
                 key: osServicePrincipal.json
       restartPolicy: Never
+  backoffLimit: 4
 {{- end -}}
 {{- if eq 1 2 -}}
               RG_NAME={{ include "cloud.azure.resourceGroupName" . }}
