@@ -1,87 +1,87 @@
-{{- if and (eq .Values.cloud.provider "Azure") (eq .Values.cluster.submariner "enabled") -}}
-apiVersion: batch/v1
-kind: Job
-metadata:
-  generateName: azure-submariner-postsync-job-
-  namespace: {{ include "cluster.namespace" . }}
-  annotations:
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-spec:
-  template:
-    spec:
-      containers:
-        - name: firewallconfig
-          image: mcr.microsoft.com/azure-cli:latest
-          command:
-            - /bin/sh
-            - -c
-            - |
-              mkdir /tmp/home
-              export HOME=/tmp/home
-              USERNAME=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .clientId)
-              PASSWORD=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .clientSecret)
-              TENANT=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .tenantId)
-              SUBSCRIPTION=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .subscriptionId)
-              echo "Logging on to Azure Subscription $SUBSCRIPTION"
-              az login --service-principal -u $USERNAME -p $PASSWORD --tenant $TENANT
+# {{- if and (eq .Values.cloud.provider "Azure") (eq .Values.cluster.submariner "enabled") -}}
+# apiVersion: batch/v1
+# kind: Job
+# metadata:
+#   generateName: azure-submariner-postsync-job-
+#   namespace: {{ include "cluster.namespace" . }}
+#   annotations:
+#     argocd.argoproj.io/hook: PostSync
+#     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+# spec:
+#   template:
+#     spec:
+#       containers:
+#         - name: firewallconfig
+#           image: mcr.microsoft.com/azure-cli:latest
+#           command:
+#             - /bin/sh
+#             - -c
+#             - |
+#               mkdir /tmp/home
+#               export HOME=/tmp/home
+#               USERNAME=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .clientId)
+#               PASSWORD=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .clientSecret)
+#               TENANT=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .tenantId)
+#               SUBSCRIPTION=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .subscriptionId)
+#               echo "Logging on to Azure Subscription $SUBSCRIPTION"
+#               az login --service-principal -u $USERNAME -p $PASSWORD --tenant $TENANT
 
-              RG_NAME=$(az group list --query "[?contains(name,'{{ include "cluster.name" . }}')]" | jq -r .[].name)
-              CLUSTER_ID=${RG_NAME%-*}
-              LB_NAME_INTERNAL=$(az network lb list -g $RG_NAME --query "[?starts_with(name, '{{ include "cluster.name" . }}')] | [?contains(name, 'internal')]" | jq -r .[].name)
-              LB_NAME_PUBLIC=$(az network lb list -g $RG_NAME --query "[?starts_with(name, '{{ include "cluster.name" . }}')] | [?!contains(name, 'internal')]" | jq -r .[].name)
-              WORKER_NICS=$(az network nic list -g $RG_NAME --query "[?contains(name,'submariner')]" | jq -r .[].name)
-              
-              echo "INTERNAL LOAD BALANCER: Create inbound nat rules"
-              az network lb inbound-nat-rule create --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --name submariner-nat-4500-internal --protocol Udp --frontend-port 4500 --backend-port 4500 --frontend-ip-name internal-lb-ip-v4 --output none 
-              az network lb inbound-nat-rule create --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --name submariner-nat-8080-internal --protocol Tcp --frontend-port 8080 --backend-port 8080 --frontend-ip-name internal-lb-ip-v4 --output none 
-              az network lb inbound-nat-rule create --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --name submariner-nat-500-internal  --protocol Udp --frontend-port 500  --backend-port 500  --frontend-ip-name internal-lb-ip-v4 --output none 
+#               RG_NAME=$(az group list --query "[?contains(name,'{{ include "cluster.name" . }}')]" | jq -r .[].name)
+#               CLUSTER_ID=${RG_NAME%-*}
+#               LB_NAME_INTERNAL=$(az network lb list -g $RG_NAME --query "[?starts_with(name, '{{ include "cluster.name" . }}')] | [?contains(name, 'internal')]" | jq -r .[].name)
+#               LB_NAME_PUBLIC=$(az network lb list -g $RG_NAME --query "[?starts_with(name, '{{ include "cluster.name" . }}')] | [?!contains(name, 'internal')]" | jq -r .[].name)
+#               WORKER_NICS=$(az network nic list -g $RG_NAME --query "[?contains(name,'submariner')]" | jq -r .[].name)
 
-              for nic in $WORKER_NICS; do
-                echo "INTERNAL LOAD BALANCER: Add nic $nic to inboud nat rules"
-                az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --inbound-nat-rule submariner-nat-4500-internal --nic-name $nic --ip-config-name pipConfig --output none 
-                az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --inbound-nat-rule submariner-nat-8080-internal --nic-name $nic --ip-config-name pipConfig --output none
-                az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --inbound-nat-rule submariner-nat-500-internal  --nic-name $nic --ip-config-name pipConfig --output none
-              done
+#               echo "INTERNAL LOAD BALANCER: Create inbound nat rules"
+#               az network lb inbound-nat-rule create --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --name submariner-nat-4500-internal --protocol Udp --frontend-port 4500 --backend-port 4500 --frontend-ip-name internal-lb-ip-v4 --output none
+#               az network lb inbound-nat-rule create --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --name submariner-nat-8080-internal --protocol Tcp --frontend-port 8080 --backend-port 8080 --frontend-ip-name internal-lb-ip-v4 --output none
+#               az network lb inbound-nat-rule create --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --name submariner-nat-500-internal  --protocol Udp --frontend-port 500  --backend-port 500  --frontend-ip-name internal-lb-ip-v4 --output none
 
-              echo "EXTERNAL LOAD BALANCER: Create inbound nat rules"
-              az network lb inbound-nat-rule create --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --name submariner-nat-4500-external --protocol Udp --frontend-port 4500 --backend-port 4500 --frontend-ip-name public-lb-ip-v4 --output none 
-              az network lb inbound-nat-rule create --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --name submariner-nat-8080-external --protocol Tcp --frontend-port 8080 --backend-port 8080 --frontend-ip-name public-lb-ip-v4 --output none 
-              az network lb inbound-nat-rule create --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --name submariner-nat-500-external  --protocol Udp --frontend-port 500  --backend-port 500  --frontend-ip-name public-lb-ip-v4 --output none 
+#               for nic in $WORKER_NICS; do
+#                 echo "INTERNAL LOAD BALANCER: Add nic $nic to inboud nat rules"
+#                 az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --inbound-nat-rule submariner-nat-4500-internal --nic-name $nic --ip-config-name pipConfig --output none
+#                 az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --inbound-nat-rule submariner-nat-8080-internal --nic-name $nic --ip-config-name pipConfig --output none
+#                 az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_INTERNAL --resource-group $RG_NAME --inbound-nat-rule submariner-nat-500-internal  --nic-name $nic --ip-config-name pipConfig --output none
+#               done
 
-              for nic in $WORKER_NICS; do
-                echo "EXTERNAL LOAD BALANCER: Add nic $nic to inboud nat rules"
-                az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --inbound-nat-rule submariner-nat-4500-external --nic-name $nic --ip-config-name pipConfig --output none 
-                az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --inbound-nat-rule submariner-nat-8080-external --nic-name $nic --ip-config-name pipConfig --output none
-                az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --inbound-nat-rule submariner-nat-500-external  --nic-name $nic --ip-config-name pipConfig --output none
-              done
+#               echo "EXTERNAL LOAD BALANCER: Create inbound nat rules"
+#               az network lb inbound-nat-rule create --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --name submariner-nat-4500-external --protocol Udp --frontend-port 4500 --backend-port 4500 --frontend-ip-name public-lb-ip-v4 --output none
+#               az network lb inbound-nat-rule create --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --name submariner-nat-8080-external --protocol Tcp --frontend-port 8080 --backend-port 8080 --frontend-ip-name public-lb-ip-v4 --output none
+#               az network lb inbound-nat-rule create --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --name submariner-nat-500-external  --protocol Udp --frontend-port 500  --backend-port 500  --frontend-ip-name public-lb-ip-v4 --output none
 
-              echo "Create NSG rules for 4500 UDP, 4800 UDP and 8080 TCP"
-              az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1000 --name submariner-4500-inbound  --direction Inbound  --access Allow --protocol Udp --destination-port-ranges 4500 --output none
-              az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1000 --name submariner-4500-outbound --direction Outbound --access Allow --protocol Udp --destination-port-ranges 4500 --output none
-              az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1001 --name submariner-4800-inbound  --direction Inbound  --access Allow --protocol Udp --destination-port-ranges 4800 --output none
-              az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1001 --name submariner-4800-outbound --direction Outbound --access Allow --protocol Udp --destination-port-ranges 4800 --output none
-              az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1002 --name submariner-8080-inbound  --direction Inbound  --access Allow --protocol Tcp --destination-port-ranges 8080 --output none
-              az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1002 --name submariner-8080-outbound --direction Outbound --access Allow --protocol Tcp --destination-port-ranges 8080 --output none
-              az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1003 --name submariner-500-inbound   --direction Inbound  --access Allow --protocol Udp --destination-port-ranges 500  --output none
-              az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1003 --name submariner-500-outbound  --direction Outbound --access Allow --protocol Udp --destination-port-ranges 500  --output none
+#               for nic in $WORKER_NICS; do
+#                 echo "EXTERNAL LOAD BALANCER: Add nic $nic to inboud nat rules"
+#                 az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --inbound-nat-rule submariner-nat-4500-external --nic-name $nic --ip-config-name pipConfig --output none
+#                 az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --inbound-nat-rule submariner-nat-8080-external --nic-name $nic --ip-config-name pipConfig --output none
+#                 az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME_PUBLIC --resource-group $RG_NAME --inbound-nat-rule submariner-nat-500-external  --nic-name $nic --ip-config-name pipConfig --output none
+#               done
 
-          resources:
-            requests:
-              cpu: "2500m"
-              memory: "64Mi"
-            limits:
-              cpu: "2500m"
-              memory: "256Mi"
-          env:
-          - name: AZURE_SERVICE_PRINCIPAL_JSON
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "cluster.name" . }}-azure-creds
-                key: osServicePrincipal.json
-      restartPolicy: Never
-  backoffLimit: 4
-{{- end -}}
-{{- if eq 1 2 -}}
+#               echo "Create NSG rules for 4500 UDP, 4800 UDP and 8080 TCP"
+#               az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1000 --name submariner-4500-inbound  --direction Inbound  --access Allow --protocol Udp --destination-port-ranges 4500 --output none
+#               az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1000 --name submariner-4500-outbound --direction Outbound --access Allow --protocol Udp --destination-port-ranges 4500 --output none
+#               az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1001 --name submariner-4800-inbound  --direction Inbound  --access Allow --protocol Udp --destination-port-ranges 4800 --output none
+#               az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1001 --name submariner-4800-outbound --direction Outbound --access Allow --protocol Udp --destination-port-ranges 4800 --output none
+#               az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1002 --name submariner-8080-inbound  --direction Inbound  --access Allow --protocol Tcp --destination-port-ranges 8080 --output none
+#               az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1002 --name submariner-8080-outbound --direction Outbound --access Allow --protocol Tcp --destination-port-ranges 8080 --output none
+#               az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1003 --name submariner-500-inbound   --direction Inbound  --access Allow --protocol Udp --destination-port-ranges 500  --output none
+#               az network nsg rule create --resource-group $RG_NAME --nsg-name $CLUSTER_ID-nsg --priority 1003 --name submariner-500-outbound  --direction Outbound --access Allow --protocol Udp --destination-port-ranges 500  --output none
 
-{{- end -}}
+#           resources:
+#             requests:
+#               cpu: "2500m"
+#               memory: "64Mi"
+#             limits:
+#               cpu: "2500m"
+#               memory: "256Mi"
+#           env:
+#           - name: AZURE_SERVICE_PRINCIPAL_JSON
+#             valueFrom:
+#               secretKeyRef:
+#                 name: {{ include "cluster.name" . }}-azure-creds
+#                 key: osServicePrincipal.json
+#       restartPolicy: Never
+#   backoffLimit: 4
+# {{- end -}}
+# {{- if eq 1 2 -}}
+
+# {{- end -}}

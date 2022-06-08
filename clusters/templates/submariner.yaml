@@ -1,12 +1,12 @@
-# {{- if eq .Values.cluster.submariner "enabled" -}}
-# apiVersion: addon.open-cluster-management.io/v1alpha1
-# kind: ManagedClusterAddOn
-# metadata:
-#   name: submariner
-#   namespace: {{ include "cluster.namespace" . }}
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "140"
-#     helm.sh/hook-weight: "140"
-# spec:
-#   installNamespace: submariner-operator
-# {{- end -}}
+{{- if eq .Values.cluster.submariner "enabled" -}}
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ManagedClusterAddOn
+metadata:
+  name: submariner
+  namespace: {{ include "cluster.namespace" . }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "140"
+    helm.sh/hook-weight: "140"
+spec:
+  installNamespace: submariner-operator
+{{- end -}}
