@@ -26,7 +26,7 @@ spec:
               echo "Logging on to Azure Subscription $SUBSCRIPTION"
               az login --service-principal -u $USERNAME -p $PASSWORD --tenant $TENANT
 
-              RG_NAME=$(az group list --query "[?contains(name,'azure-hive-c1')]"|jq -r .[].name)
+              RG_NAME=$(az group list --query "[?contains(name,'{{ include "cluster.name" . }}')]"|jq -r .[].name)
               LB_NAME=$(az network lb list -g $RG_NAME --query "[?!contains(name, 'internal')]"|jq -r .[].name)
               FRONTEND_IP_NAME=submariner-frontend-ip
               WORKER_NICS=$(az network nic list -g $RG_NAME --query "[?contains(name,'submariner')]"|jq -r .[].name)
