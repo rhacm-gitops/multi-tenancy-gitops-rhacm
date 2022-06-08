@@ -4,4 +4,4 @@ metadata:
   name: '{{ include "cluster.name" . }}'
   annotations:
     argocd.argoproj.io/sync-wave: "130"
-  namespace: '{{ include "cluster.name" . }}'
+  namespace: '{{ include "cluster.namespace" . }}'
