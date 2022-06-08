@@ -1,124 +1,92 @@
-# {{- if and (eq .Values.cloud.provider "Azure") (eq .Values.cluster.submariner "enabled") -}}
-# apiVersion: batch/v1
-# kind: Job
-# metadata:
-#   generateName: azure-submariner-postsync-job-
-#   namespace: {{ include "cluster.namespace" . }}
-#   annotations:
-#     argocd.argoproj.io/hook: PostSync
-#     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-# spec:
-#   template:
-#     spec:
-#       containers:
-#         - name: firewallconfig
-#           image: mcr.microsoft.com/azure-cli:latest
-#           command:
-#             - /bin/sh
-#             - -c
-#             - |
-#               mkdir /tmp/home
-#               export HOME=/tmp/home
-#               USERNAME=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq -r .clientId)
-#               PASSWORD=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq -r .clientSecret)
-#               TENANT=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq -r .tenantId)
-#               SUBSCRIPTION=$(echo $AZURE_SERVICE_PRINCIPAL_JSON|jq -r .subscriptionId)
-#               echo "Logging on to Azure Subscription $SUBSCRIPTION"
-#               az login --service-principal -u $USERNAME -p $PASSWORD --tenant $TENANT
+{{- if and (eq .Values.cloud.provider "Azure") (eq .Values.cluster.submariner "enabled") -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: azure-submariner-postsync-job-
+  namespace: {{ include "cluster.namespace" . }}
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  template:
+    spec:
+      containers:
+        - name: firewallconfig
+          image: mcr.microsoft.com/azure-cli:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              mkdir /tmp/home
+              export HOME=/tmp/home
+              USERNAME=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .clientId)
+              PASSWORD=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .clientSecret)
+              TENANT=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .tenantId)
+              SUBSCRIPTION=$(echo $AZURE_SERVICE_PRINCIPAL_JSON | jq -r .subscriptionId)
+              echo "Logging on to Azure Subscription $SUBSCRIPTION"
+              az login --service-principal -u $USERNAME -p $PASSWORD --tenant $TENANT
 
-#               RG_NAME=$(az group list --query "[?contains(name,'{{ include "cluster.name" . }}')]"|jq -r .[].name)
-#               LB_NAME=$(az network lb list -g $RG_NAME --query "[?!contains(name, 'internal')]"|jq -r .[].name)
-#               FRONTEND_IP_NAME=submariner-frontend-ip
-#               WORKER_NICS=$(az network nic list -g $RG_NAME --query "[?contains(name,'submariner')]"|jq -r .[].name)
+              RG_NAME=$(az group list --query "[?contains(name,'{{ include "cluster.name" . }}')]" | jq -r .[].name)
+              LB_NAME=$(az network lb list -g $RG_NAME --query "[?!contains(name, 'internal')]" | jq -r .[].name)
+              FRONTEND_IP_NAME=submariner-frontend-ip
+              WORKER_NICS=$(az network nic list -g $RG_NAME --query "[?contains(name,'submariner')]" | jq -r .[].name)
 
-#               echo "Creating submariner frontend ip"
-#               az network public-ip create -g $RG_NAME -n $FRONTEND_IP_NAME --sku Standard
+              echo "Creating submariner frontend ip"
+              az network public-ip create -g $RG_NAME -n $FRONTEND_IP_NAME --sku Standard
 
-#               echo "Adding submariner frontend ip to $LB_NAME loadbalancer"
-#               az network lb frontend-ip create -g $RG_NAME -n $FRONTEND_IP_NAME --lb-name $LB_NAME --public-ip-address $FRONTEND_IP_NAME
+              echo "Adding submariner frontend ip to $LB_NAME loadbalancer"
+              az network lb frontend-ip create -g $RG_NAME -n $FRONTEND_IP_NAME --lb-name $LB_NAME --public-ip-address $FRONTEND_IP_NAME
 
-#               echo "Create submariner-nat-4500 inbound nat rule"
-#               az network lb inbound-nat-rule create --lb-name $LB_NAME \
-#                 --resource-group $RG_NAME \
-#                 --name submariner-nat-4500 \
-#                 --protocol Udp --frontend-port 4500 --backend-port 4500 \
-#                 --frontend-ip-name $FRONTEND_IP_NAME
+              echo "Create submariner-nat-4500 inbound nat rule"
+              az network lb inbound-nat-rule create --lb-name $LB_NAME --resource-group $RG_NAME --name submariner-nat-4500 --protocol Udp --frontend-port 4500 --backend-port 4500 --frontend-ip-name $FRONTEND_IP_NAME
 
-#               for nic in $WORKER_NICS; do
-#                 echo "Adding nic $nic to submariner-nat-4500 inbound nat rule"
-#                 az network nic ip-config inbound-nat-rule add \
-#                   --lb-name $LB_NAME --resource-group $RG_NAME \
-#                   --inbound-nat-rule submariner-nat-4500 \
-#                   --nic-name $nic --ip-config-name pipConfig
-#               done
+              for nic in $WORKER_NICS; do
+                echo "Adding nic $nic to submariner-nat-4500 inbound nat rule"
+                az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME --resource-group $RG_NAME --inbound-nat-rule submariner-nat-4500 --nic-name $nic --ip-config-name pipConfig
+              done
 
-#               echo "Create submariner-nat-8080 inbound nat rule"
-#               az network lb inbound-nat-rule create --lb-name $LB_NAME \
-#                 --resource-group $RG_NAME \
-#                 --name submarinet-nat-8080 \
-#                 --protocol Tcp --frontend-port 8080 --backend-port 8080 \
-#                 --frontend-ip-name $FRONTEND_IP_NAME
+              echo "Create submariner-nat-8080 inbound nat rule"
+              az network lb inbound-nat-rule create --lb-name $LB_NAME --resource-group $RG_NAME --name submarinet-nat-8080 --protocol Tcp --frontend-port 8080 --backend-port 8080 --frontend-ip-name $FRONTEND_IP_NAME
 
-#               for nic in $WORKER_NICS; do
-#                 echo "Adding nic $nic to submariner-nat-8080 inbound nat rule"
-#                 az network nic ip-config inbound-nat-rule add \
-#                   --lb-name $LB_NAME --resource-group $RG_NAME \
-#                   --inbound-nat-rule submarinet-nat-8080 \
-#                   --nic-name $nic --ip-config-name pipConfig
-#               done
+              for nic in $WORKER_NICS; do
+                echo "Adding nic $nic to submariner-nat-8080 inbound nat rule"
+                az network nic ip-config inbound-nat-rule add --lb-name $LB_NAME --resource-group $RG_NAME --inbound-nat-rule submarinet-nat-8080 --nic-name $nic --ip-config-name pipConfig
+              done
 
-#               echo "Create NSG rule for submariner-nat-4500 inbound"
-#               az network nsg rule create --resource-group $RG_NAME \
-#                 --nsg-name $LB_NAME-nsg --priority 200 \
-#                 --name submariner-4500-inbound --direction Inbound --access Allow \
-#                 --protocol Udp --destination-port-ranges 4500
+              echo "Create NSG rule for submariner-nat-4500 inbound"
+              az network nsg rule create --resource-group $RG_NAME --nsg-name $LB_NAME-nsg --priority 1000 --name submariner-4500-inbound --direction Inbound --access Allow --protocol Udp --destination-port-ranges 4500
 
-#               echo "Create NSG rule for submariner-nat-4500 outbound"
-#               az network nsg rule create --resource-group $RG_NAME \
-#                 --nsg-name $LB_NAME-nsg --priority 200 \
-#                 --name submariner-4500-outbound --direction Outbound --access Allow \
-#                 --protocol Udp --destination-port-ranges 4500
+              echo "Create NSG rule for submariner-nat-4500 outbound"
+              az network nsg rule create --resource-group $RG_NAME --nsg-name $LB_NAME-nsg --priority 1000 --name submariner-4500-outbound --direction Outbound --access Allow --protocol Udp --destination-port-ranges 4500
 
-#               echo "Create NSG rule for VXLAN 4800 inbound"
-#               az network nsg rule create --resource-group $RG_NAME \
-#                 --nsg-name $LB_NAME-nsg --priority 201 \
-#                 --name submariner-4800-inbound --direction Inbound --access Allow \
-#                 --protocol Udp --destination-port-ranges 4800
+              echo "Create NSG rule for VXLAN 4800 inbound"
+              az network nsg rule create --resource-group $RG_NAME --nsg-name $LB_NAME-nsg --priority 1001 --name submariner-4800-inbound --direction Inbound --access Allow --protocol Udp --destination-port-ranges 4800
 
-#               echo "Create NSG rule for VXLAN 4800 outbound"
-#               az network nsg rule create --resource-group $RG_NAME \
-#                 --nsg-name $LB_NAME-nsg --priority 201 \
-#                 --name submariner-4800-outbound --direction Outbound --access Allow \
-#                 --protocol Udp --destination-port-ranges 4800
+              echo "Create NSG rule for VXLAN 4800 outbound"
+              az network nsg rule create --resource-group $RG_NAME --nsg-name $LB_NAME-nsg --priority 1001 --name submariner-4800-outbound --direction Outbound --access Allow --protocol Udp --destination-port-ranges 4800
 
-#               echo "Create NSG rule for gateway metrics 8080 inbound"
-#               az network nsg rule create --resource-group $RG_NAME \
-#                 --nsg-name $LB_NAME-nsg --priority 202 \
-#                 --name submariner-8080-inbound --direction Inbound --access Allow \
-#                 --protocol Tcp --destination-port-ranges 8080
+              echo "Create NSG rule for gateway metrics 8080 inbound"
+              az network nsg rule create --resource-group $RG_NAME --nsg-name $LB_NAME-nsg --priority 1002 --name submariner-8080-inbound --direction Inbound --access Allow --protocol Tcp --destination-port-ranges 8080
 
-#               echo "Create NSG rule for gateway metrics 8080 outbound"
-#               az network nsg rule create --resource-group $RG_NAME \
-#                 --nsg-name $LB_NAME-nsg --priority 202 \
-#                 --name submariner-8080-outbound --direction Outbound --access Allow \
-#                 --protocol Tcp --destination-port-ranges 8080
+              echo "Create NSG rule for gateway metrics 8080 outbound"
+              az network nsg rule create --resource-group $RG_NAME --nsg-name $LB_NAME-nsg --priority 1002 --name submariner-8080-outbound --direction Outbound --access Allow --protocol Tcp --destination-port-ranges 8080
 
-#           resources:
-#             requests:
-#               cpu: "2500m"
-#               memory: "64Mi"
-#             limits:
-#               cpu: "2500m"
-#               memory: "256Mi"
-#           env:
-#           - name: AZURE_SERVICE_PRINCIPAL_JSON
-#             valueFrom:
-#               secretKeyRef:
-#                 name: {{ include "cluster.name" . }}-azure-creds
-#                 key: osServicePrincipal.json
-#       restartPolicy: Never
-#   backoffLimit: 4
-# {{- end -}}
-# {{- if eq 1 2 -}}
+          resources:
+            requests:
+              cpu: "2500m"
+              memory: "64Mi"
+            limits:
+              cpu: "2500m"
+              memory: "256Mi"
+          env:
+          - name: AZURE_SERVICE_PRINCIPAL_JSON
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "cluster.name" . }}-azure-creds
+                key: osServicePrincipal.json
+      restartPolicy: Never
+  backoffLimit: 4
+{{- end -}}
+{{- if eq 1 2 -}}
 
-# {{- end -}}
+{{- end -}}
