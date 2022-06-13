@@ -78,6 +78,18 @@ spec:
               #   az network nic ip-config inbound-nat-rule add --lb-name $LB_INT -g $RG --inbound-nat-rule submariner-500-int  --nic-name $nic --ip-config-name pipConfig -o none
               # done
 
+              # not documented but works around the issue
+              # see https://kubernetes.slack.com/archives/C010RJV694M/p1646089086717109
+              # for disussions about this issue
+              ### BEGIN WORKAROUND
+              #
+              az network public-ip create --name $nic-public-ip -g $CID-rg --sku standard -o none
+              for nic in $NICS; do
+                az network nic ip-config update -g $CID-rg --nic-name $nic -n pipConfig --public-ip-addres $nic-public-ip -o none
+              done
+              #
+              ### END WORKAROUND
+
           resources:
             requests:
               cpu: "2500m"
