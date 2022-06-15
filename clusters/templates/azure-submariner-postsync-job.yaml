@@ -82,12 +82,12 @@ spec:
               # see https://kubernetes.slack.com/archives/C010RJV694M/p1646089086717109
               # for disussions about this issue
               ### BEGIN WORKAROUND
-              #
-              az network public-ip create --name $nic-public-ip -g $CID-rg --sku standard -o none
-              for nic in $NICS; do
-                az network nic ip-config update -g $CID-rg --nic-name $nic -n pipConfig --public-ip-addres $nic-public-ip -o none
-              done
-              #
+              # #
+              # az network public-ip create --name $nic-public-ip -g $CID-rg --sku standard -o none
+              # for nic in $NICS; do
+              #   az network nic ip-config update -g $CID-rg --nic-name $nic -n pipConfig --public-ip-addres $nic-public-ip -o none
+              # done
+              # #
               ### END WORKAROUND
 
           resources:
