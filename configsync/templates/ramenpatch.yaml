@@ -26,7 +26,7 @@ spec:
               unset KUBECONFIG
               {{ end }}
 
-              cat <<EOF > /data/ramenpatch.yaml
+              cat <<EOF > /data/ramenpatch-targetcluster.yaml
               data:
                 ramen_manager_config.yaml: |
                   apiVersion: ramendr.openshift.io/v1alpha1
@@ -61,9 +61,33 @@ spec:
               {{ range $idx, $cluster := .Values.clusters }}
               export KUBECONFIG=/data/{{ .name }}-kubeconfig
               echo KUBECONFIG=$KUBECONFIG
-              oc patch configmap ramen-dr-cluster-operator-config -n openshift-dr-system --patch-file /data/ramenpatch.yaml
+              oc patch configmap ramen-dr-cluster-operator-config -n openshift-dr-system --patch-file /data/ramenpatch-targetcluster.yaml
               unset KUBECONFIG
               {{ end }}
+              RAMEN_CONFIG=$(oc get cm ramen-hub-operator-config -n openshift-dr-system -o jsonpath="{['data']['ramen_manager_config\.yaml']}")
+
+              cat <<EOF > /data/ramenpatch-hubcluster.yaml
+              data:
+                ramen_manager_config.yaml: |
+              $(echo $RAMEN_CONFIG| sed 's/^/    /')
+                  s3StoreProfiles:
+                  - s3ProfileName: s3-primary
+                    s3CompatibleEndpoint: ${S3_ROUTE_primary}
+                    s3Region: primary
+                    s3Bucket: ${S3_BUCKET_primary}
+                    s3SecretRef:
+                      name: odr-s3secret-primary
+                      namespace: openshift-dr-system
+                  - s3ProfileName: s3-secondary
+                    s3CompatibleEndpoint: ${S3_ROUTE_secondary}
+                    s3Region: secondary
+                    s3Bucket: ${S3_BUCKET_secondary}
+                    s3SecretRef:
+                      name: odr-s3secret-secondary
+                      namespace: openshift-dr-system
+              EOF
+
+              oc patch configmap ramen-hub-operator-config -n openshift-dr-system --patch-file /data/ramenpatch-hubcluster.yaml
 
           volumeMounts:
             - name: workdir
