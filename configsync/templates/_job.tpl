@@ -18,3 +18,4 @@ oc apply -f /data/combined-ca-bundle.yaml
 oc patch proxy cluster --type=merge  --patch='{"spec":{"trustedCA":{"name":"user-ca-bundle"}}}'
 unset KUBECONFIG
 {{- end -}}
+
