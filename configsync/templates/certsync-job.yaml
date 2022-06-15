@@ -35,7 +35,7 @@ spec:
               metadata:
                 name: user-ca-bundle
                 namespace: openshift-config
-              stringData:
+              data:
                 ca-bundle.crt: |
               $(cat /data/*.crt|sed 's/^/    /')
               EOF
