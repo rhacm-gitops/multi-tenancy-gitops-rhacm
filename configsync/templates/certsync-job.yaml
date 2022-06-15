@@ -40,7 +40,7 @@ spec:
               $(cat /data/*.crt|sed 's/^/    /')
               EOF
 
-              oc create -f /data/combined-ca-bundle.yaml
+              oc apply -f /data/combined-ca-bundle.yaml
               oc patch proxy cluster --type=merge  --patch='{"spec":{"trustedCA":{"name":"user-ca-bundle"}}}'
 
 
