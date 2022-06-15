@@ -19,6 +19,7 @@ spec:
             - |
               {{ range $idx, $cluster := .Values.clusters }}
               export KUBECONFIG=/data/{{ .name }}-kubeconfig
+              echo KUBECONFIG=$KUBECONFIG
               {{ include "cluster.login" $cluster | nindent 14 }}
               {{ include "certificates.gather" $cluster | nindent 14 }}
               unset KUBECONFIG
@@ -46,6 +47,7 @@ spec:
 
               {{ range $idx, $cluster := .Values.clusters -}}
               export KUBECONFIG=/data/{{ .name }}-kubeconfig
+              echo KUBECONFIG=$KUBECONFIG
               {{ include "certificates.sync" $cluster | nindent 14 }}
               unset KUBECONFIG
               {{- end }}

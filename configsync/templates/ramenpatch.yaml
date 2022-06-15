@@ -19,6 +19,7 @@ spec:
             - |
               {{ range $idx, $cluster := .Values.clusters }}
               export KUBECONFIG=/data/{{ .name }}-kubeconfig
+              echo KUBECONFIG=$KUBECONFIG
               {{ include "cluster.login" $cluster | nindent 14 }}
               S3_ROUTE_{{ .role }}=$(oc get route s3 -n openshift-storage -o jsonpath --template="https://{.spec.host}")
               S3_BUCKET_{{ .role }}=$(oc get configmap odrbucket -n openshift-dr-system -o jsonpath='{.data.BUCKET_NAME}')
@@ -59,6 +60,7 @@ spec:
 
               {{ range $idx, $cluster := .Values.clusters }}
               export KUBECONFIG=/data/{{ .name }}-kubeconfig
+              echo KUBECONFIG=$KUBECONFIG
               oc patch configmap ramen-dr-cluster-operator-config -n openshift-dr-system --patch-file /data/ramenpatch.yaml
               unset KUBECONFIG
               {{ end }}
