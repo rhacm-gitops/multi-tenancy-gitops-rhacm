@@ -9,5 +9,5 @@ spec:
       region: "{{ include "primaryClusters" . }}"
     - name: "{{ include "secondaryClusters" . }}"
       s3ProfileName: s3-secondary
-      region: "{{ include "primaryClusters" . }}"
+      region: "{{ include "secondaryClusters" . }}"
   schedulingInterval: {{ .Values.schedulingInterval }}
