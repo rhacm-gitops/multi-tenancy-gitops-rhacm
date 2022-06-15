@@ -1,10 +1,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  generatedName: certsync-job-
+  generateName: certsync-job-
   namespace: openshift-gitops
   annotations:
     argocd.argoproj.io/sync-wave: "450"
+    argocd.argoproj.io/hook: Sync
 spec:
   template:
     spec:
