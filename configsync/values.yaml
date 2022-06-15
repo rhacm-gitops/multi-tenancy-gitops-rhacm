@@ -1,5 +1,5 @@
-clusters:
-  - name: azure-hive-c1
-    role: primary
-  - name: azure-hive-c2
-    role: secondary
+# clusters:
+#   - name: azure-hive-c1
+#     role: primary
+#   - name: azure-hive-c2
+#     role: secondary
