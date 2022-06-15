@@ -6,8 +6,8 @@ spec:
   drClusterSet:
     - name: "{{ include "primaryClusters" . }}"
       s3ProfileName: s3-primary
-      region: "placeholder"
+      region: "{{ include "primaryClusters" . }}"
     - name: "{{ include "secondaryClusters" . }}"
       s3ProfileName: s3-secondary
-      region: "placeholder"
+      region: "{{ include "primaryClusters" . }}"
   schedulingInterval: {{ .Values.schedulingInterval }}
