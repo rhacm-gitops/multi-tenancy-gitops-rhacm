@@ -1,0 +1,11 @@
+apiVersion: ramendr.openshift.io/v1alpha1
+kind: DRPolicy
+metadata:
+  name: odr-policy-5m
+spec:
+  drClusterSet:
+    - name: "{{ include "primaryClusters" . }}"
+      s3ProfileName: s3-primary
+    - name: "{{ include "secondaryClusters" . }}"
+      s3ProfileName: s3-secondary
+  schedulingInterval: 5m

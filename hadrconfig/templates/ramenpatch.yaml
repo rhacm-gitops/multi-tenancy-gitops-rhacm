@@ -5,8 +5,8 @@ metadata:
   namespace: openshift-gitops
   annotations:
     argocd.argoproj.io/sync-wave: "450"
-    # argocd.argoproj.io/hook: PreSync
-    # argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   template:
     spec:
@@ -30,7 +30,7 @@ spec:
               data:
                 ramen_manager_config.yaml: |
                   apiVersion: ramendr.openshift.io/v1alpha1
-                  kind: RamenConfig
+                  kind: hadrconfig
                   health:
                     healthProbeBindAddress: :8081
                   metrics:
