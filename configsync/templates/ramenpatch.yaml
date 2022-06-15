@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ramenpatch-job
+  namespace: openshift-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "450"
+    # argocd.argoproj.io/hook: PreSync
+    # argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      containers:
+        - name: config
+          image: quay.io/openshift/origin-cli:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              {{ range $idx, $cluster := .Values.clusters }}
+              export KUBECONFIG=/data/{{ .name }}=kubeconfig
+              {{ include "cluster.login" $cluster | nindent 14 }}
+              S3_ROUTE_{{ .role }}=$(oc get route s3 -n openshift-storage -o jsonpath --template="https://{.spec.host}")
+              S3_BUCKET_{{ .role }}=$(oc get configmap odrbucket -n openshift-dr-system -o jsonpath='{.data.BUCKET_NAME}')
+              unset KUBECONFIG
+              {{ end }}
+
+              cat <<EOF > /data/ramenpatch.yaml
+              data:
+                ramen_manager_config.yaml: |
+                  apiVersion: ramendr.openshift.io/v1alpha1
+                  kind: RamenConfig
+                  health:
+                    healthProbeBindAddress: :8081
+                  metrics:
+                    bindAddress: 127.0.0.1:9289
+                  webhook:
+                    port: 9443
+                  leaderElection:
+                    leaderElect: true
+                    resourceName: dr-cluster.ramendr.openshift.io
+                  ramenControllerType: dr-cluster
+                  s3StoreProfiles:
+                  - s3ProfileName: s3-primary
+                    s3CompatibleEndpoint: ${S3_ROUTE_primary}
+                    s3Region: primary
+                    s3Bucket: ${S3_BUCKET_primary}
+                    s3SecretRef:
+                      name: odr-s3secret-primary
+                      namespace: openshift-dr-system
+                  - s3ProfileName: s3-secondary
+                    s3CompatibleEndpoint: ${S3_ROUTE_secondary}
+                    s3Region: secondary
+                    s3Bucket: ${S3_BUCKET_secondary}
+                    s3SecretRef:
+                      name: odr-s3secret-secondary
+                      namespace: openshift-dr-system
+              EOF
+
+              {{ range $idx, $cluster := .Values.clusters }}
+              export KUBECONFIG=/data/{{ .name }}-kubeconfig
+              oc patch configmap ramen-dr-cluster-operator-config -n openshift-dr-system --patch-file /data/ramenpatch.yaml
+              unset KUBECONFIG
+              {{ end }}
+
+          volumeMounts:
+            - name: workdir
+              mountPath: /data
+      restartPolicy: Never
+      volumes:
+        - name: workdir
+          emptyDir: {}
+      serviceAccountName: openshift-gitops-cntk-argocd-application-controller
+  backoffLimit: 4

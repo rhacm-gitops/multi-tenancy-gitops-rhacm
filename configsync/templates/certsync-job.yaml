@@ -11,17 +11,18 @@ spec:
   template:
     spec:
       containers:
-        - name: certpush
+        - name: config
           image: quay.io/openshift/origin-cli:latest
           command:
             - /bin/sh
             - -c
             - |
-              #!/bin/sh
-
-              {{- range $idx, $cluster := .Values.clusters -}}
+              {{ range $idx, $cluster := .Values.clusters }}
+              export KUBECONFIG=/data/{{ .name }}-kubeconfig
+              {{ include "cluster.login" $cluster | nindent 14 }}
               {{ include "certificates.gather" $cluster | nindent 14 }}
-              {{- end }}
+              unset KUBECONFIG
+              {{ end }}
 
 
               if oc get cm -n openshift-config user-ca-bundle > /dev/null 2>&1; then
@@ -44,7 +45,9 @@ spec:
 
 
               {{ range $idx, $cluster := .Values.clusters -}}
+              export KUBECONFIG=/data/{{ .name }}-kubeconfig
               {{ include "certificates.sync" $cluster | nindent 14 }}
+              unset KUBECONFIG
               {{- end }}
 
           volumeMounts:
