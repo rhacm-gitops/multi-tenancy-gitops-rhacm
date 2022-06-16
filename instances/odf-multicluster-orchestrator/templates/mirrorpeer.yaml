@@ -1,0 +1,13 @@
+apiVersion: multicluster.odf.openshift.io/v1alpha1
+kind: MirrorPeer
+metadata:
+  name: {{ .Values.name }}
+spec:
+  manageS3: true
+  schedulingIntervals:
+    - 5m
+    - 15m
+  items:
+  {{- range $idx, $peer := .Values.peers -}}
+  {{- include "mirror.clusterRef" $peer | nindent 2 -}}
+  {{- end -}}
