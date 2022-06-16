@@ -11,3 +11,6 @@ spec:
       s3ProfileName: s3-secondary
       region: "{{ include "secondaryClusters" . }}"
   schedulingInterval: {{ .Values.schedulingInterval }}
+  replicationClassSelector:
+    matchLabels:
+      class: ramen
