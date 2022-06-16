@@ -1,0 +1,6 @@
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  annotations:
+    olm.providedAPIs: DRPlacementControl.v1alpha1.ramendr.openshift.io,DRPolicy.v1alpha1.ramendr.openshift.io
+  name: openshift-dr-system
