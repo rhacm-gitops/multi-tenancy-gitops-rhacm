@@ -13,8 +13,5 @@ spec:
     - name: {{ include "secondaryClusters" $params }}
       region: {{ include "secondaryClusters" $params }}
       s3ProfileName: s3profile-{{ include "secondaryClusters" $params }}-ocs-storagecluster
-  replicationClassSelector:
-    matchLabels:
-      class: ramen
   schedulingInterval: {{ . }}
 {{ end -}}
