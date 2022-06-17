@@ -1,16 +1,20 @@
+{{- range .Values.schedulingIntervals -}}
+{{- $params := dict "Values" $.Values -}} 
+---
 apiVersion: ramendr.openshift.io/v1alpha1
 kind: DRPolicy
 metadata:
-  name: odr-policy-5m
+  name: odr-policy-{{ . }}
 spec:
   drClusterSet:
-    - name: "{{ include "primaryClusters" . }}"
-      s3ProfileName: s3-primary
-      region: "{{ include "primaryClusters" . }}"
-    - name: "{{ include "secondaryClusters" . }}"
-      s3ProfileName: s3-secondary
-      region: "{{ include "secondaryClusters" . }}"
-  schedulingInterval: {{ .Values.schedulingInterval }}
+    - name: {{ include "primaryClusters" $params }}
+      region: {{ include "primaryClusters" $params }}
+      s3ProfileName: s3profile-{{ include "primaryClusters" $params }}-ocs-storagecluster
+    - name: {{ include "secondaryClusters" $params }}
+      region: {{ include "secondaryClusters" $params }}
+      s3ProfileName: s3profile-{{ include "secondaryClusters" $params }}-ocs-storagecluster
   replicationClassSelector:
     matchLabels:
       class: ramen
+  schedulingInterval: {{ . }}
+{{ end -}}

@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "450"
     argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/hook-delete-policy: HookFailed
 spec:
   template:
     spec:
@@ -17,77 +17,9 @@ spec:
             - /bin/sh
             - -c
             - |
-              {{ range $idx, $cluster := .Values.clusters }}
-              export KUBECONFIG=/data/{{ .name }}-kubeconfig
-              echo KUBECONFIG=$KUBECONFIG
-              {{ include "cluster.login" $cluster | nindent 14 }}
-              S3_ROUTE_{{ .role }}=$(oc get route s3 -n openshift-storage -o jsonpath --template="https://{.spec.host}")
-              S3_BUCKET_{{ .role }}=$(oc get configmap odrbucket -n openshift-dr-system -o jsonpath='{.data.BUCKET_NAME}')
-              unset KUBECONFIG
-              {{ end }}
 
-              cat <<EOF > /data/ramenpatch-targetcluster.yaml
-              data:
-                ramen_manager_config.yaml: |
-                  apiVersion: ramendr.openshift.io/v1alpha1
-                  kind: hadrconfig
-                  health:
-                    healthProbeBindAddress: :8081
-                  metrics:
-                    bindAddress: 127.0.0.1:9289
-                  webhook:
-                    port: 9443
-                  leaderElection:
-                    leaderElect: true
-                    resourceName: dr-cluster.ramendr.openshift.io
-                  ramenControllerType: dr-cluster
-                  s3StoreProfiles:
-                  - s3ProfileName: s3-primary
-                    s3CompatibleEndpoint: ${S3_ROUTE_primary}
-                    s3Region: primary
-                    s3Bucket: ${S3_BUCKET_primary}
-                    s3SecretRef:
-                      name: odr-s3secret-primary
-                      namespace: openshift-dr-system
-                  - s3ProfileName: s3-secondary
-                    s3CompatibleEndpoint: ${S3_ROUTE_secondary}
-                    s3Region: secondary
-                    s3Bucket: ${S3_BUCKET_secondary}
-                    s3SecretRef:
-                      name: odr-s3secret-secondary
-                      namespace: openshift-dr-system
-              EOF
-
-              {{ range $idx, $cluster := .Values.clusters }}
-              export KUBECONFIG=/data/{{ .name }}-kubeconfig
-              echo KUBECONFIG=$KUBECONFIG
-              oc patch configmap ramen-dr-cluster-operator-config -n openshift-dr-system --patch-file /data/ramenpatch-targetcluster.yaml
-              unset KUBECONFIG
-              {{ end }}
-              RAMEN_CONFIG=$(oc get cm ramen-hub-operator-config -n openshift-dr-system -o jsonpath="{['data']['ramen_manager_config\.yaml']}")
-
-              cat <<EOF > /data/ramenpatch-hubcluster.yaml
-              data:
-                ramen_manager_config.yaml: |
-              $(echo $RAMEN_CONFIG| sed 's/^/    /')
-                  s3StoreProfiles:
-                  - s3ProfileName: s3-primary
-                    s3CompatibleEndpoint: ${S3_ROUTE_primary}
-                    s3Region: primary
-                    s3Bucket: ${S3_BUCKET_primary}
-                    s3SecretRef:
-                      name: odr-s3secret-primary
-                      namespace: openshift-dr-system
-                  - s3ProfileName: s3-secondary
-                    s3CompatibleEndpoint: ${S3_ROUTE_secondary}
-                    s3Region: secondary
-                    s3Bucket: ${S3_BUCKET_secondary}
-                    s3SecretRef:
-                      name: odr-s3secret-secondary
-                      namespace: openshift-dr-system
-              EOF
-
-              oc patch configmap ramen-hub-operator-config -n openshift-dr-system --patch-file /data/ramenpatch-hubcluster.yaml
+              oc get configmap ramen-hub-operator-config -n openshift-dr-system  -o yaml > /data/ramen-hub-operator-config.yaml | sed 's/drClusterOperator:/drClusterOperator:\n      deploymentAutomationEnabled: true/' > /data/ramen-hub-operator-config.yaml
+              oc replace -f /data/ramen-hub-operator-config.yaml
 
           volumeMounts:
             - name: workdir

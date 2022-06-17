@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "450"
     argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/hook-delete-policy: HookFailed
 spec:
   template:
     spec:
@@ -17,6 +17,8 @@ spec:
             - /bin/sh
             - -c
             - |
+
+
               {{ range $idx, $cluster := .Values.clusters }}
               export KUBECONFIG=/data/{{ .name }}-kubeconfig
               echo KUBECONFIG=$KUBECONFIG

@@ -10,7 +10,7 @@ oc login ${apiURL} -u ${username} -p ${password} --insecure-skip-tls-verify
 # hack
 {{- define "primaryClusters" -}}
 {{ $myList := list }}
-{{- range $idx, $cluster := .Values.clusters -}}
+{{- range $idx, $cluster := $.Values.clusters -}}
 {{- if eq .role "primary" -}}
 {{ $myList = append $myList .name }}
 {{- end -}}
@@ -21,7 +21,7 @@ oc login ${apiURL} -u ${username} -p ${password} --insecure-skip-tls-verify
 # hack
 {{- define "secondaryClusters" -}}
 {{ $myList := list }}
-{{- range $idx, $cluster := .Values.clusters -}}
+{{- range $idx, $cluster := $.Values.clusters -}}
 {{- if eq .role "secondary" -}}
 {{ $myList = append $myList .name }}
 {{- end -}}
