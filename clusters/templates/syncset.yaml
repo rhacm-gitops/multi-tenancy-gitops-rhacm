@@ -1,4 +1,4 @@
-{{- if (default .Values.cluster.installInstanaAgent false) }}
+{{- if (default .Values.cluster.installExternalSecrets false) }}
 apiVersion: hive.openshift.io/v1
 kind: SyncSet
 metadata:
