@@ -2,7 +2,7 @@
 apiVersion: hive.openshift.io/v1
 kind: SyncSet
 metadata:
-  name: syncset-{{ include "cluster.name" . }}-instana
+  name: syncset-{{ include "cluster.name" . }}-externalsecrets
   namespace: '{{ include "cluster.namespace" . }}'
   annotations:
     argocd.argoproj.io/sync-wave: "130"
