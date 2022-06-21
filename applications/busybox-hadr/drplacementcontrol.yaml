@@ -1,0 +1,19 @@
+apiVersion: ramendr.openshift.io/v1alpha1
+kind: DRPlacementControl
+metadata:
+  labels:
+    app: busybox-sample
+  name: busybox-drplacementcontrol
+spec:
+  drPolicyRef:
+    name: odr-policy-5m
+  placementRef:
+    kind: PlacementRule
+    name: busybox-placement
+  preferredCluster: azure-hive-c1
+  pvcSelector:
+    matchLabels:
+      appname: busybox
+  #action: Failover
+  #action: Relocate
+  #failoverCluster: azure-hive-c2

@@ -1,0 +1,12 @@
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  labels:
+    app: busybox-sample
+  name: busybox-placement
+spec:
+  clusterConditions:
+  - status: 'True'
+    type: ManagedClusterConditionAvailable
+  clusterReplicas: 1
+  schedulerName: ramen
