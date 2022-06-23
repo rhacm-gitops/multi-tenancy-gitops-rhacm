@@ -18,10 +18,10 @@ spec:
             - -c
             - |
 
-              oc get configmap ramen-hub-operator-config -n openshift-dr-system  -o yaml > /data/config.yaml
-              sed -i 's/deploymentAutomationEnabled: false/deploymentAutomationEnabled: true/' /data/config.yaml
-              sed -i 's/s3SecretDistributionEnabled: false/s3SecretDistributionEnabled: true/' /data/config.yaml
-              oc replace -f /data/config.yaml
+              oc get configmap ramen-hub-operator-config -n openshift-dr-system  -o yaml | \
+                egrep -v  "deploymentAutomationEnabled|s3SecretDistributionEnabled" | \
+                sed 's/drClusterOperator:/drClusterOperator:\n      deploymentAutomationEnabled: true\n      s3SecretDistributionEnabled: true/' | \
+                oc replace -f -
 
           volumeMounts:
             - name: workdir
